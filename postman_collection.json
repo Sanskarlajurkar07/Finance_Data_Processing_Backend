@@ -234,9 +234,9 @@
               "raw": "{\n  \"description\": \"Monthly Salary\",\n  \"amount\": 5000.00,\n  \"type\": \"INCOME\",\n  \"category\": \"Salary\",\n  \"recordDate\": \"2024-01-15\",\n  \"idempotencyKey\": \"income-001\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/records",
+              "raw": "{{base_url}}/api/financial-records",
               "host": ["{{base_url}}"],
-              "path": ["api", "records"]
+              "path": ["api", "financial-records"]
             }
           },
           "event": [
@@ -278,9 +278,9 @@
               "raw": "{\n  \"description\": \"Grocery Shopping\",\n  \"amount\": 150.00,\n  \"type\": \"EXPENSE\",\n  \"category\": \"Food\",\n  \"recordDate\": \"2024-01-15\",\n  \"idempotencyKey\": \"expense-001\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/records",
+              "raw": "{{base_url}}/api/financial-records",
               "host": ["{{base_url}}"],
-              "path": ["api", "records"]
+              "path": ["api", "financial-records"]
             }
           },
           "event": [
@@ -311,9 +311,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/records/{{record_id}}",
+              "raw": "{{base_url}}/api/financial-records/{{record_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "records", "{{record_id}}"]
+              "path": ["api", "financial-records", "{{record_id}}"]
             }
           },
           "event": [
@@ -344,9 +344,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/records?page=0&size=20",
+              "raw": "{{base_url}}/api/financial-records?page=0&size=20",
               "host": ["{{base_url}}"],
-              "path": ["api", "records"],
+              "path": ["api", "financial-records"],
               "query": [
                 {
                   "key": "page",
@@ -396,9 +396,9 @@
               "raw": "{\n  \"description\": \"Updated Salary\",\n  \"amount\": 5500.00,\n  \"type\": \"INCOME\",\n  \"category\": \"Salary\",\n  \"recordDate\": \"2024-01-15\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/records/{{record_id}}",
+              "raw": "{{base_url}}/api/financial-records/{{record_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "records", "{{record_id}}"]
+              "path": ["api", "financial-records", "{{record_id}}"]
             }
           },
           "event": [
@@ -429,9 +429,9 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/api/records/{{record_id}}",
+              "raw": "{{base_url}}/api/financial-records/{{record_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "records", "{{record_id}}"]
+              "path": ["api", "financial-records", "{{record_id}}"]
             }
           },
           "event": [
@@ -601,3 +601,4 @@
     }
   ]
 }
+

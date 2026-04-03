@@ -216,6 +216,145 @@ Controllers → Services → Repositories → Database
 - **Dashboard Service**: Analytics with caching
 - **Audit Aspect**: AOP-based audit logging
 
+## Architecture Decisions
+
+### Why CP over CA (CAP Theorem)
+
+Financial data correctness is non-negotiable. This system prioritizes **Consistency** and **Partition Tolerance** over Availability.
+
+**Trade-off**: If Redis is unavailable, we fall back to database queries — slightly slower but never wrong data. For financial systems, showing stale or incorrect balances is worse than a 200ms delay.
+
+### Why NUMERIC(19,4) not Double
+
+```java
+// Double precision error
+0.1 + 0.2 = 0.30000000000000004  // ❌ Wrong
+
+// BigDecimal precision
+0.1 + 0.2 = 0.3000  // ✅ Correct
+```
+
+In finance, this difference is real money. NUMERIC(19,4) supports amounts up to 999 trillion with 4 decimal places, preventing floating-point rounding errors that compound over thousands of transactions.
+
+### Why AOP for Audit Logging
+
+Zero manual audit calls in service code. Every write operation is automatically captured via `@Aspect` and `@Auditable` annotation.
+
+**Benefits**:
+- Impossible to forget audit logging
+- Consistent audit format across all operations
+- Separation of concerns (business logic vs. compliance)
+- This is how compliance-grade systems work in production
+
+**Example**:
+```java
+@Auditable(actionType = ActionType.CREATE)
+public FinancialRecord createRecord(CreateRecordRequest request) {
+    // Business logic only — audit happens automatically
+}
+```
+
+### Why Idempotency Keys
+
+Network retries can cause duplicate financial transactions. Same idempotency key = same response, no duplicate record created.
+
+**Real-world scenario**:
+```
+Client → [Network timeout] → Retry → Duplicate transaction ❌
+Client → [Idempotency key] → Retry → Same record returned ✅
+```
+
+This is the Stripe/Razorpay pattern. Critical for:
+- Mobile apps with unreliable networks
+- Microservice architectures with retry logic
+- Payment processing integrations
+
+### Cache Stampede Tradeoff
+
+`@CacheEvict` clears dashboard cache on every financial record write. If 100 analysts hit the dashboard simultaneously after cache eviction, 100 database queries fire.
+
+**Why this is acceptable**:
+- Dashboard queries are read-optimized with indexes
+- Financial writes are infrequent compared to reads
+- Alternative (stale cache) is worse for financial data
+- At scale, implement cache warming or pub/sub invalidation
+
+**Documented limitation**: For >1000 concurrent users, implement Redis pub/sub for selective cache invalidation.
+
+### Why 15-Minute JWT Expiration
+
+**Security vs. UX balance**:
+- Shorter expiry (5 min) = more secure but annoying re-logins
+- Longer expiry (1 hour) = better UX but higher risk if token stolen
+- 15 minutes = industry standard compromise
+
+**Mitigation**: Refresh tokens implemented for seamless re-authentication without password re-entry.
+
+### Why Soft Delete over Hard Delete
+
+Financial records are marked `isActive = false` instead of `DELETE FROM`.
+
+**Compliance benefits**:
+- Complete audit trail for regulatory requirements
+- Data recovery if deletion was accidental
+- Referential integrity preserved
+- Supports GDPR "right to be forgotten" with anonymization
+
+**Trade-off**: Requires `WHERE isActive = true` in all queries, but JPA specifications handle this transparently.
+
+### Why BCrypt Strength 12
+
+BCrypt with strength 12 (2^12 = 4,096 iterations) provides strong password protection while maintaining acceptable authentication performance (~200-300ms).
+
+**Why not higher**:
+- Strength 13-14 would be more secure but impacts UX
+- Strength 12 is OWASP recommended for 2024
+- Adjustable via configuration for future hardware improvements
+
+### Why Redis for Rate Limiting
+
+Distributed rate limiting using Redis enables:
+- Horizontal scaling (multiple app instances share state)
+- Automatic key expiration (15-minute windows)
+- Sub-millisecond lookups
+
+**Alternative considered**: Database-based rate limiting would work but adds 50-100ms latency per auth attempt.
+
+## API Documentation
+
+### Swagger/OpenAPI
+
+Interactive API documentation available at:
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
+
+### Postman Collection
+
+Import `postman_collection.json` for:
+- Pre-configured requests for all endpoints
+- Automated test assertions
+- Environment variable management
+
+## Known Limitations
+
+### Current Scope
+
+1. **Single Redis Node**: No clustering implemented (acceptable for assignment scope)
+2. **No Distributed Transactions**: Across multiple services (not needed for monolith)
+3. **JWT Revocation Not Implemented**: Stateless design tradeoff (tokens valid until expiry)
+4. **Cache Stampede**: Possible under extreme load (documented above)
+5. **No API Versioning**: `/api/v1/` not implemented (would add for production)
+
+### Production Enhancements
+
+For production deployment, consider:
+- Redis Sentinel/Cluster for high availability
+- Circuit breakers (Resilience4j) for external service calls
+- Distributed tracing (Zipkin/Jaeger)
+- Metrics aggregation (Prometheus + Grafana)
+- API rate limiting per user (not just auth attempts)
+- Database read replicas for analytics queries
+
 ## Monitoring
 
 ### Actuator Endpoints

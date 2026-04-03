@@ -50,3 +50,7 @@ dump.rdb
 
 # Postman config (keep collection, ignore local config)
 .postman.json
+
+# Assessment and submission files (internal use only)
+ASSIGNMENT_ASSESSMENT.md
+SUBMISSION_FORM_RESPONSES.md
