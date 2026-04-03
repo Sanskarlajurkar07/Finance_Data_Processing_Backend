@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: finance-data-processing-backend-test
+  
+  # Test Database Configuration (will be overridden by Testcontainers)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/testdb
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+  
+  # JPA Configuration for Tests
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  
+  # Test Redis Configuration (will be overridden by Testcontainers)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  
+  # Flyway Configuration for Tests
+  flyway:
+    enabled: true
+    clean-disabled: false
+    baseline-on-migrate: true
+
+# Test Application Configuration
+app:
+  jwt:
+    secret: test-secret-key-for-testing-purposes-must-be-at-least-512-bits-long-for-hs512-algorithm
+    expiration-ms: 900000
+    algorithm: HS512
+  
+  security:
+    bcrypt-strength: 4  # Lower strength for faster tests
+  
+  cache:
+    dashboard-ttl-seconds: 5  # Shorter TTL for tests
+  
+  rate-limit:
+    max-attempts: 5
+    window-minutes: 15
+
+# Logging Configuration for Tests
+logging:
+  level:
+    root: INFO
+    com.fintech: DEBUG
+    org.springframework.security: WARN
+    org.hibernate.SQL: DEBUG

@@ -1,0 +1,603 @@
+{
+  "info": {
+    "name": "Finance Data Processing Backend API",
+    "description": "Comprehensive API test collection for Finance Data Processing Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login - Admin User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has token', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.token).to.exist;",
+                  "  pm.environment.set('jwt_token', jsonData.token);",
+                  "});",
+                  "pm.test('Token expires in 900 seconds', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.expiresIn).to.equal(900);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - Invalid Credentials",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login fails with invalid credentials', function() {",
+                  "  pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Error message is Unauthorized', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.error).to.equal('Unauthorized');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"SecurePass123\",\n  \"role\": \"ANALYST\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User created successfully', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Response contains user data', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.username).to.equal('newuser');",
+                  "  pm.expect(jsonData.email).to.equal('newuser@example.com');",
+                  "  pm.expect(jsonData.role).to.equal('ANALYST');",
+                  "  pm.environment.set('user_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User by Username",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/newuser",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "newuser"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User retrieved successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('User data is correct', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.username).to.equal('newuser');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"VIEWER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "role"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User role updated successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Role is updated to VIEWER', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.role).to.equal('VIEWER');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Financial Records",
+      "item": [
+        {
+          "name": "Create Income Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Monthly Salary\",\n  \"amount\": 5000.00,\n  \"type\": \"INCOME\",\n  \"category\": \"Salary\",\n  \"recordDate\": \"2024-01-15\",\n  \"idempotencyKey\": \"income-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/records",
+              "host": ["{{base_url}}"],
+              "path": ["api", "records"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Income record created successfully', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Record contains correct data', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.description).to.equal('Monthly Salary');",
+                  "  pm.expect(jsonData.amount).to.equal(5000);",
+                  "  pm.expect(jsonData.type).to.equal('INCOME');",
+                  "  pm.environment.set('record_id', jsonData.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Expense Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Grocery Shopping\",\n  \"amount\": 150.00,\n  \"type\": \"EXPENSE\",\n  \"category\": \"Food\",\n  \"recordDate\": \"2024-01-15\",\n  \"idempotencyKey\": \"expense-001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/records",
+              "host": ["{{base_url}}"],
+              "path": ["api", "records"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expense record created successfully', function() {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Record type is EXPENSE', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.type).to.equal('EXPENSE');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Record by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/records/{{record_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "records", "{{record_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Record retrieved successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Record data is correct', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.id).to.equal(pm.environment.get('record_id'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Records (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/records?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "records"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Records retrieved successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response is paginated', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.content).to.be.an('array');",
+                  "  pm.expect(jsonData.totalElements).to.be.a('number');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated Salary\",\n  \"amount\": 5500.00,\n  \"type\": \"INCOME\",\n  \"category\": \"Salary\",\n  \"recordDate\": \"2024-01-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/records/{{record_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "records", "{{record_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Record updated successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Updated amount is correct', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.amount).to.equal(5500);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Record",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/records/{{record_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "records", "{{record_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Record deleted successfully', function() {",
+                  "  pm.response.to.have.status(204);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard & Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "dashboard", "analytics"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Analytics retrieved successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Analytics contains required fields', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.totalIncome).to.be.a('number');",
+                  "  pm.expect(jsonData.totalExpenses).to.be.a('number');",
+                  "  pm.expect(jsonData.netBalance).to.be.a('number');",
+                  "  pm.expect(jsonData.categoryBreakdown).to.be.an('object');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/audit-logs?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit-logs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Audit logs retrieved successfully', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Audit logs contain action type', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  if (jsonData.content.length > 0) {",
+                  "    pm.expect(jsonData.content[0].actionType).to.exist;",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/actuator/health",
+              "host": ["{{base_url}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Health check passed', function() {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Status is UP', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.status).to.equal('UP');",
+                  "});",
+                  "pm.test('Database is UP', function() {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.components.database.status).to.equal('UP');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "record_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

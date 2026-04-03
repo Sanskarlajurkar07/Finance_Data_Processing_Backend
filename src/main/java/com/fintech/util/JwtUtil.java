@@ -1,0 +1,166 @@
+package com.fintech.util;
+
+import com.fintech.model.User;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+/**
+ * JWT utility class for token generation and validation.
+ * 
+ * Handles JWT token operations including:
+ * - Token generation with 15-minute expiry
+ * - Token validation (signature and expiration)
+ * - Claim extraction (username, userId)
+ * 
+ * Uses HS512 algorithm with 512-bit secret key for signing.
+ * 
+ * Requirements: 1.1, 1.4
+ */
+@Component
+public class JwtUtil {
+    
+    private final long expirationMs;
+    private final SecretKey secretKey;
+    
+    /**
+     * Constructor that initializes JWT configuration from application.yml
+     * 
+     * @param jwtSecret the JWT secret key from app.jwt.secret
+     * @param expirationMs the token expiration time in milliseconds
+     */
+    public JwtUtil(
+            @Value("${app.jwt.secret}") String jwtSecret,
+            @Value("${app.jwt.expiration-ms}") long expirationMs) {
+        this.expirationMs = expirationMs;
+        // Create 512-bit secret key from the configured secret
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    /**
+     * Generates a JWT token for the given user with 15-minute expiration.
+     * 
+     * The token includes:
+     * - userId: the user's ID
+     * - username: the user's username
+     * - role: the user's role
+     * 
+     * @param user the user for whom to generate the token
+     * @return the generated JWT token string
+     * 
+     * Requirements: 1.1
+     */
+    public String generateToken(User user) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expirationMs);
+        
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId())
+                .claim("username", user.getUsername())
+                .claim("role", user.getRole().toString())
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
+                .compact();
+    }
+    
+    /**
+     * Validates a JWT token by checking signature and expiration.
+     * 
+     * @param token the JWT token to validate
+     * @return true if the token is valid, false otherwise
+     * 
+     * Requirements: 1.4
+     */
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (SecurityException e) {
+            // Invalid signature
+            return false;
+        } catch (MalformedJwtException e) {
+            // Invalid JWT format
+            return false;
+        } catch (ExpiredJwtException e) {
+            // Token has expired
+            return false;
+        } catch (UnsupportedJwtException e) {
+            // JWT is not supported
+            return false;
+        } catch (IllegalArgumentException e) {
+            // JWT claims string is empty
+            return false;
+        }
+    }
+    
+    /**
+     * Extracts the username from a JWT token.
+     * 
+     * @param token the JWT token
+     * @return the username claim from the token
+     * @throws JwtException if the token is invalid or expired
+     * 
+     * Requirements: 1.4
+     */
+    public String extractUsername(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("username", String.class);
+    }
+    
+    /**
+     * Extracts the user ID from a JWT token.
+     * 
+     * @param token the JWT token
+     * @return the userId claim from the token
+     * @throws JwtException if the token is invalid or expired
+     * 
+     * Requirements: 1.4
+     */
+    public Long extractUserId(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("userId", Long.class);
+    }
+    
+    /**
+     * Extracts the role from a JWT token.
+     * 
+     * @param token the JWT token
+     * @return the role claim from the token
+     * @throws JwtException if the token is invalid or expired
+     */
+    public String extractRole(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("role", String.class);
+    }
+    
+    /**
+     * Gets the expiration time in milliseconds for tokens generated by this utility.
+     * 
+     * @return the expiration time in milliseconds (15 minutes = 900000 ms)
+     */
+    public long getExpirationMs() {
+        return expirationMs;
+    }
+}

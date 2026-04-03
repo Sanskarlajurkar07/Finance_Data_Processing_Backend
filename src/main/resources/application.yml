@@ -1,0 +1,130 @@
+server:
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: finance-data-processing-backend
+  
+  # Database Configuration - H2 In-Memory (for development/testing)
+  datasource:
+    url: jdbc:h2:mem:financedb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    hikari:
+      pool-name: FinanceHikariPool
+      minimum-idle: 2
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA Configuration for H2
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create  # Auto-create schema for H2
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    defer-datasource-initialization: true  # Run data.sql after schema creation
+  
+  # SQL Initialization
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+  
+  # H2 Console (for debugging)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  # Redis Configuration - Disabled (not needed without Docker)
+  # data:
+  #   redis:
+  #     host: ${REDIS_HOST:localhost}
+  #     port: ${REDIS_PORT:6379}
+  #     password: ${REDIS_PASSWORD:}
+  #     timeout: 2000ms
+  #     lettuce:
+  #       pool:
+  #         max-active: 8
+  #         max-idle: 8
+  #         min-idle: 2
+  #         max-wait: 2000ms
+  
+  # Flyway Configuration - Disabled for H2 (using JPA ddl-auto instead)
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  
+  # Async Configuration
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 5
+        queue-capacity: 100
+      thread-name-prefix: async-audit-
+
+# Application Configuration
+app:
+  # JWT Configuration
+  jwt:
+    secret: ${JWT_SECRET:your-512-bit-secret-key-change-this-in-production-environment-must-be-at-least-512-bits}
+    expiration-ms: 900000  # 15 minutes in milliseconds
+    algorithm: HS512
+  
+  # Security Configuration
+  security:
+    bcrypt-strength: 12
+  
+  # Cache Configuration
+  cache:
+    dashboard-ttl-seconds: 300  # 5 minutes
+  
+  # Rate Limiting Configuration
+  rate-limit:
+    max-attempts: 5
+    window-minutes: 15
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    # redis:
+    #   enabled: true
+    db:
+      enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.fintech: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.jdbc.datasource.init: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+  file:
+    name: logs/application.log
