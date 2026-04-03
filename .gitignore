@@ -54,3 +54,5 @@ dump.rdb
 # Assessment and submission files (internal use only)
 ASSIGNMENT_ASSESSMENT.md
 SUBMISSION_FORM_RESPONSES.md
+IMPLEMENTATION_SUMMARY.md
+FIXES_APPLIED.md
