@@ -71,11 +71,25 @@ Flyway migrations run automatically on application startup.
 
 ### 6. Run the Application
 
+**Option 1: Using PowerShell Script (Recommended for Windows)**
+
+```powershell
+.\run-server-postgres.ps1
+```
+
+**Option 2: Using Maven Wrapper (if mvnw works)**
+
 ```bash
 mvn spring-boot:run
 ```
 
-The application will start on `http://localhost:8080`.
+**Option 3: Clean Restart (drops and recreates database)**
+
+```powershell
+.\clean-restart.ps1
+```
+
+The application will start on `http://localhost:8080/api`.
 
 ### 7. Default Admin Credentials
 

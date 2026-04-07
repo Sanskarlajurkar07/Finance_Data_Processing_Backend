@@ -6,25 +6,25 @@ spring:
   application:
     name: finance-data-processing-backend
   
-  # Database Configuration - H2 In-Memory (for development/testing)
+  # Database Configuration - PostgreSQL
   datasource:
-    url: jdbc:h2:mem:financedb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/financedb}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
     hikari:
       pool-name: FinanceHikariPool
-      minimum-idle: 2
-      maximum-pool-size: 10
+      minimum-idle: 5
+      maximum-pool-size: 20
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
   
-  # JPA Configuration for H2
+  # JPA Configuration for PostgreSQL
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create  # Auto-create schema for H2
+      ddl-auto: validate  # Use Flyway for schema management
     show-sql: false
     properties:
       hibernate:
@@ -33,38 +33,38 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
-    defer-datasource-initialization: true  # Run data.sql after schema creation
+        time_zone: UTC
   
-  # SQL Initialization
+  # SQL Initialization - Disabled for PostgreSQL (using Flyway)
   sql:
     init:
-      mode: always
-      data-locations: classpath:data.sql
+      mode: never
   
-  # H2 Console (for debugging)
+  # H2 Console (disabled for PostgreSQL)
   h2:
     console:
-      enabled: true
-      path: /h2-console
+      enabled: false
   
-  # Redis Configuration - Disabled (not needed without Docker)
-  # data:
-  #   redis:
-  #     host: ${REDIS_HOST:localhost}
-  #     port: ${REDIS_PORT:6379}
-  #     password: ${REDIS_PASSWORD:}
-  #     timeout: 2000ms
-  #     lettuce:
-  #       pool:
-  #         max-active: 8
-  #         max-idle: 8
-  #         min-idle: 2
-  #         max-wait: 2000ms
+  # Redis Configuration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 2000ms
   
-  # Flyway Configuration - Disabled for H2 (using JPA ddl-auto instead)
+  # Flyway Configuration
   flyway:
-    enabled: false
+    enabled: true
     baseline-on-migrate: true
+    clean-disabled: false
+    validate-on-migrate: false
     locations: classpath:db/migration
   
   # Async Configuration
@@ -110,8 +110,8 @@ management:
       probes:
         enabled: true
   health:
-    # redis:
-    #   enabled: true
+    redis:
+      enabled: true
     db:
       enabled: true
 
